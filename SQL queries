@@ -1,0 +1,75 @@
+The hotel booking data needed cleaning to remove nulls in various columns. Altered the table with the below queries. 
+ALTER TABLE hotelbook RENAME TO hotelbook_old;
+
+Created a new table with updated default values: 
+CREATE TABLE hotelbook (
+    hotel TEXT,
+    is_canceled INTEGER,
+    lead_time INTEGER,
+    arrival_date_year INTEGER,
+    arrival_date_month TEXT,
+    arrival_date_week_number INTEGER,
+    arrival_date_day_of_month INTEGER,
+    stays_in_weekend_nights INTEGER,
+    stays_in_week_nights INTEGER,
+    adults INTEGER,
+    children INTEGER DEFAULT 0,
+    babies INTEGER DEFAULT 0,
+    meal TEXT,
+    country TEXT DEFAULT 'Unknown',
+    market_segment TEXT,
+    distribution_channel TEXT,
+    is_repeated_guest INTEGER,
+    previous_cancellations INTEGER,
+    previous_bookings_not_canceled INTEGER,
+    reserved_room_type TEXT,
+    assigned_room_type TEXT,
+    booking_changes INTEGER,
+    deposit_type TEXT,
+    agent TEXT DEFAULT 'Unknown',
+    company TEXT DEFAULT 'Unknown',
+    days_in_waiting_list INTEGER,
+    customer_type TEXT,
+    adr REAL,
+    required_car_parking_spaces INTEGER,
+    total_of_special_requests INTEGER,
+    reservation_status TEXT,
+    reservation_status_date TEXT
+);
+
+
+Copied existing data using this query and converted existing NULLS to 'unknown'. This was done to not remove rows or columns where NULL values were common. 
+SELECT 
+    hotel, is_canceled, lead_time, arrival_date_year, arrival_date_month,
+    arrival_date_week_number, arrival_date_day_of_month, stays_in_weekend_nights,
+    stays_in_week_nights, adults, COALESCE(children, 0), babies, meal,
+    COALESCE(country, 'Unknown'), market_segment, distribution_channel,
+    is_repeated_guest, previous_cancellations, previous_bookings_not_canceled,
+    reserved_room_type, assigned_room_type, booking_changes, deposit_type,
+    COALESCE(agent, 'Unknown'), COALESCE(company, 'Unknown'),
+    days_in_waiting_list, customer_type, adr, required_car_parking_spaces,
+    total_of_special_requests, reservation_status, reservation_status_date
+FROM hotelbook_old;
+
+Dropped old table using: 
+DROP TABLE hotelbook_old;
+
+After refreshing the updates from the prior queries I was still seeing NULL values. The below includes UPDATE as a way to commit prior adjustments. Needed to TRIM to remove beginning and ending white spaces. 
+   UPDATE hotelbook
+SET 
+    country = CASE 
+        WHEN country IS NULL OR TRIM(country) = '' OR LOWER(TRIM(country)) = 'null' THEN 'Unknown' 
+        ELSE country 
+    END,
+    agent = CASE 
+        WHEN agent IS NULL OR TRIM(agent) = '' OR LOWER(TRIM(agent)) = 'null' THEN 'Unknown' 
+        ELSE agent 
+    END,
+    company = CASE 
+        WHEN company IS NULL OR TRIM(company) = '' OR LOWER(TRIM(company)) = 'null' THEN 'Unknown' 
+        ELSE company 
+    END,
+    children = CASE 
+        WHEN children IS NULL OR TRIM(CAST(children AS TEXT)) = '' OR LOWER(TRIM(CAST(children AS TEXT))) = 'null' THEN 0 
+        ELSE children 
+    END;
